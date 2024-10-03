@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -321,6 +322,31 @@
             color: #666;
         }
 
+        /* Accessibility: High Contrast Mode */
+        @media (prefers-contrast: high) {
+            body {
+                background-color: #000;
+                color: #fff;
+            }
+            .task {
+                background-color: #000;
+                border-left-color: #fff;
+            }
+            .modal-content {
+                background-color: #000;
+                color: #fff;
+            }
+            input, select, textarea {
+                background-color: #000;
+                color: #fff;
+                border-color: #fff;
+            }
+            button {
+                background-color: #fff;
+                color: #000;
+            }
+        }
+
         @media (max-width: 768px) {
             .task-board {
                 flex-direction: column;
@@ -350,60 +376,60 @@
 
     <div id="statusBar">
         <div id="batteryStatus">
-            <div id="batteryIcon"><div id="batteryLevel"></div></div>
+            <div id="batteryIcon" aria-label="Battery level"><div id="batteryLevel"></div></div>
             <span id="batteryPercentage">100%</span>
         </div>
-        <button id="emergencyButton">EMERGENCY</button>
+        <button id="emergencyButton" aria-label="Activate Emergency Mode">EMERGENCY</button>
     </div>
 
-    <div class="task-board">
-        <div class="column" id="todo">
-            <h2>To Do</h2>
-            <div class="task-list"></div>
-        </div>
-        <div class="column" id="inProgress">
-            <h2>In Progress</h2>
-            <div class="task-list"></div>
-        </div>
-        <div class="column" id="done">
-            <h2>Done</h2>
-            <div class="task-list"></div>
-        </div>
-    </div>
+    <main class="task-board" role="main">
+        <section class="column" id="todo" aria-labelledby="todo-heading">
+            <h2 id="todo-heading">To Do</h2>
+            <div class="task-list" role="list"></div>
+        </section>
+        <section class="column" id="inProgress" aria-labelledby="inprogress-heading">
+            <h2 id="inprogress-heading">In Progress</h2>
+            <div class="task-list" role="list"></div>
+        </section>
+        <section class="column" id="done" aria-labelledby="done-heading">
+            <h2 id="done-heading">Done</h2>
+            <div class="task-list" role="list"></div>
+        </section>
+    </main>
 
-    <button class="floating-button" onclick="openModal()">&#43;</button>
-    <button class="import-button" onclick="exportTasks()">&#8645;</button>
+    <button class="floating-button" onclick="openModal()" aria-label="Add Task">&#43;</button>
+    <button class="import-button" onclick="exportTasks()" aria-label="Import or Export Tasks">&#8645;</button>
 
     <!-- Task Modal -->
-    <div id="taskModal" class="modal">
+    <div id="taskModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
         <div class="modal-content">
-            <button class="close-modal" onclick="closeModal()">&times;</button>
+            <button class="close-modal" onclick="closeModal()" aria-label="Close">&times;</button>
             <h2 id="modalTitle">Add Task</h2>
-            <input type="text" id="taskName" placeholder="Task name">
-            <input type="date" id="taskDate">
-            <select id="taskPriority">
+            <input type="text" id="taskName" placeholder="Task name" aria-label="Task name">
+            <input type="date" id="taskDate" aria-label="Task date">
+            <select id="taskPriority" aria-label="Task priority">
                 <option value="low">Low Priority</option>
                 <option value="medium">Medium Priority</option>
                 <option value="high">High Priority</option>
             </select>
-            <select id="taskAssignee">
+            <select id="taskAssignee" aria-label="Task assignee">
                 <option value="unassigned">Unassigned</option>
                 <option value="astronaut1">Astronaut 1</option>
                 <option value="astronaut2">Astronaut 2</option>
                 <option value="astronaut3">Astronaut 3</option>
             </select>
-            <textarea id="taskDescription" placeholder="Task description (optional)" rows="3"></textarea>
+            <textarea id="taskDescription" placeholder="Task description (optional)" rows="3" aria-label="Task description"></textarea>
             <button id="saveTaskButton" onclick="saveTask()">Add Task</button>
             <button onclick="closeModal()">Cancel</button>
         </div>
     </div>
 
     <!-- Import/Export Modal -->
-    <div id="importExportModal" class="modal">
+    <div id="importExportModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="importExportTitle">
         <div class="modal-content">
-            <button class="close-modal" onclick="closeImportExportModal()">&times;</button>
-            <h2>Import/Export Tasks</h2>
-            <textarea id="jsonData" rows="10" placeholder="Paste JSON data here"></textarea>
+            <button class="close-modal" onclick="closeImportExportModal()" aria-label="Close">&times;</button>
+            <h2 id="importExportTitle">Import/Export Tasks</h2>
+            <textarea id="jsonData" rows="10" placeholder="Paste JSON data here" aria-label="JSON data"></textarea>
             <button onclick="importTasks()">Import Tasks</button>
             <button onclick="downloadTasks()">Export Tasks</button>
             <button onclick="closeImportExportModal()">Close</button>
@@ -419,8 +445,19 @@
         let draggedTask = null;
         let editingTaskId = null;
 
+        // Accessibility: Keyboard navigation for modals
+        document.addEventListener('keydown', function(event) {
+            const isModalOpen = document.getElementById('taskModal').style.display === 'block' ||
+                                document.getElementById('importExportModal').style.display === 'block';
+            if (isModalOpen && event.key === 'Escape') {
+                closeModal();
+                closeImportExportModal();
+            }
+        });
+
         function openModal(isEdit = false) {
             document.getElementById('taskModal').style.display = 'block';
+            document.getElementById('taskName').focus();
             if (isEdit) {
                 document.getElementById('modalTitle').textContent = 'Edit Task';
                 document.getElementById('saveTaskButton').textContent = 'Save Changes';
@@ -498,6 +535,7 @@
             taskElement.classList.add('task', `priority-${task.priority}`);
             taskElement.setAttribute('draggable', true);
             taskElement.id = `task-${task.id}`;
+            taskElement.setAttribute('role', 'listitem');
             taskElement.innerHTML = `
                 <h3>${task.name}</h3>
                 ${task.description ? `<p>${task.description}</p>` : ''}
@@ -506,7 +544,7 @@
                 <div class="subtasks">
                     ${task.subtasks.map((subtask, index) => `
                         <div class="subtask">
-                            <input type="checkbox" ${subtask.completed ? 'checked' : ''} onchange="toggleSubtask(${task.id}, ${index})">
+                            <input type="checkbox" ${subtask.completed ? 'checked' : ''} onchange="toggleSubtask(${task.id}, ${index})" aria-label="Toggle subtask">
                             <span class="${subtask.completed ? 'completed' : ''}">${subtask.name}</span>
                         </div>
                     `).join('')}
@@ -641,6 +679,7 @@
         function openImportExportModal() {
             document.getElementById('importExportModal').style.display = 'block';
             document.getElementById('jsonData').value = JSON.stringify(tasks, null, 2);
+            document.getElementById('jsonData').focus();
         }
 
         function closeImportExportModal() {
