@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Zapper</title>
+    <title>Task Zapper: Mars Rover Edition</title>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
         :root {
-            --primary-color: #4a90e2;
-            --secondary-color: #f39c12;
-            --background-color: #f4f4f4;
-            --text-color: #333;
-            --task-bg-color: #fff;
+            --primary-color: #ff4500;
+            --secondary-color: #1e90ff;
+            --background-color: #1c1c1c;
+            --text-color: #e0e0e0;
+            --task-bg-color: #2a2a2a;
+            --accent-color: #32cd32;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Roboto Mono', monospace;
             line-height: 1.6;
             color: var(--text-color);
             background-color: var(--background-color);
@@ -23,57 +24,72 @@
             padding: 20px;
             max-width: 800px;
             margin: 0 auto;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255, 69, 0, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(30, 144, 255, 0.1) 0%, transparent 20%);
         }
 
         h1, h2 {
             color: var(--primary-color);
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
         .task-input {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            background-color: var(--task-bg-color);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 69, 0, 0.2);
         }
 
-        .task-input input {
+        .task-input input, .task-input input[type="date"] {
             flex-grow: 1;
             padding: 10px;
-            border: 2px solid var(--primary-color);
+            border: 2px solid var(--secondary-color);
             border-radius: 5px;
             font-size: 16px;
+            background-color: var(--background-color);
+            color: var(--text-color);
         }
 
         .task-input button {
             background-color: var(--primary-color);
-            color: white;
+            color: var(--text-color);
             border: none;
             padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, transform 0.1s;
+            text-transform: uppercase;
+            font-weight: bold;
         }
 
         .task-input button:hover {
-            background-color: #3a7bd5;
+            background-color: #ff6347;
+            transform: scale(1.05);
         }
 
         .task {
             background-color: var(--task-bg-color);
-            border-radius: 5px;
+            border-radius: 10px;
             padding: 15px;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid var(--secondary-color);
         }
 
         .task:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
         }
 
         .task h3 {
             margin-top: 0;
-            color: var(--primary-color);
+            color: var(--secondary-color);
         }
 
         .task-actions {
@@ -84,26 +100,44 @@
 
         .task-actions button {
             background-color: var(--secondary-color);
-            color: white;
+            color: var(--text-color);
             border: none;
             padding: 5px 10px;
             border-radius: 3px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, transform 0.1s;
+            text-transform: uppercase;
+            font-size: 12px;
         }
 
         .task-actions button:hover {
-            background-color: #e67e22;
+            background-color: #4169e1;
+            transform: scale(1.05);
         }
 
         .subtask {
             display: flex;
             align-items: center;
-            margin-top: 5px;
+            margin-top: 10px;
+            padding: 5px;
+            background-color: rgba(30, 144, 255, 0.1);
+            border-radius: 5px;
         }
 
         .subtask input[type="checkbox"] {
             margin-right: 10px;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--secondary-color);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .subtask input[type="checkbox"]:checked {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
         }
 
         .completed {
@@ -123,14 +157,22 @@
             100% { transform: scale(2); opacity: 0; }
         }
 
-        #exportButton {
-            background-color: var(--primary-color);
-            color: white;
+        #exportButton, #randomTaskButton, #orderTasksButton {
+            background-color: var(--accent-color);
+            color: var(--background-color);
             border: none;
             padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
             margin-top: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        #exportButton:hover, #randomTaskButton:hover, #orderTasksButton:hover {
+            background-color: #7cfc00;
+            transform: scale(1.05);
         }
 
         @media (max-width: 600px) {
@@ -149,17 +191,20 @@
     </style>
 </head>
 <body>
-    <h1>Task Zapper</h1>
+    <h1>Task Zapper: Mars Rover Edition</h1>
     
     <div class="task-input">
-        <input type="text" id="taskName" placeholder="What needs to be done?">
-        <button onclick="addTask()">Zap It In</button>
+        <input type="text" id="taskName" placeholder="New mission objective">
+        <input type="date" id="taskDate">
+        <button onclick="addTask()">Deploy Task</button>
     </div>
 
     <div id="taskList">
         <!-- Tasks will be displayed here -->
     </div>
 
+    <button id="randomTaskButton" onclick="selectRandomTask()">Random Task</button>
+    <button id="orderTasksButton" onclick="orderTasks()">Order Tasks</button>
     <button id="exportButton" onclick="exportAsPNG()">Export as PNG</button>
 
     <script>
@@ -167,9 +212,16 @@
 
         function addTask() {
             const taskName = document.getElementById('taskName').value.trim();
+            const taskDate = document.getElementById('taskDate').value;
             if (taskName) {
-                tasks.push({ name: taskName, subtasks: [], completed: false });
+                tasks.push({ 
+                    name: taskName, 
+                    date: taskDate, 
+                    subtasks: [], 
+                    completed: false 
+                });
                 document.getElementById('taskName').value = '';
+                document.getElementById('taskDate').value = '';
                 updateTaskList();
             }
         }
@@ -183,19 +235,21 @@
                 if (task.completed) taskElement.classList.add('completed');
                 taskElement.innerHTML = `
                     <h3>${task.name}</h3>
+                    ${task.date ? `<p>Target Date: ${task.date}</p>` : ''}
                     <div class="subtasks">
                         ${task.subtasks.map((subtask, subIndex) => `
                             <div class="subtask">
                                 <input type="checkbox" ${subtask.completed ? 'checked' : ''} onchange="toggleSubtask(${index}, ${subIndex})">
                                 <span class="${subtask.completed ? 'completed' : ''}">${subtask.name}</span>
+                                ${subtask.timeEstimate ? ` (${subtask.timeEstimate} mins)` : ''}
                             </div>
                         `).join('')}
                     </div>
                     <div class="task-actions">
                         <button onclick="addSubtask(${index})">Add Step</button>
-                        <button onclick="editTask(${index})">Edit</button>
-                        <button onclick="removeTask(${index})">Remove</button>
-                        <button onclick="toggleTask(${index})">${task.completed ? 'Unmark' : 'Complete'}</button>
+                        <button onclick="editTask(${index})">Recalibrate</button>
+                        <button onclick="removeTask(${index})">Abort</button>
+                        <button onclick="toggleTask(${index})">${task.completed ? 'Reactivate' : 'Complete'}</button>
                     </div>
                 `;
                 taskList.appendChild(taskElement);
@@ -205,7 +259,12 @@
         function addSubtask(taskIndex) {
             const subtaskName = prompt("Enter the step:");
             if (subtaskName && subtaskName.trim()) {
-                tasks[taskIndex].subtasks.push({ name: subtaskName.trim(), completed: false });
+                const timeEstimate = prompt("Enter time estimate in minutes (optional):");
+                tasks[taskIndex].subtasks.push({ 
+                    name: subtaskName.trim(), 
+                    completed: false,
+                    timeEstimate: timeEstimate ? parseInt(timeEstimate) : null
+                });
                 updateTaskList();
             }
         }
@@ -216,9 +275,13 @@
         }
 
         function editTask(index) {
-            const newName = prompt("Edit task:", tasks[index].name);
+            const newName = prompt("Recalibrate task:", tasks[index].name);
             if (newName && newName.trim()) {
                 tasks[index].name = newName.trim();
+                const newDate = prompt("Update target date (YYYY-MM-DD) or leave blank:");
+                if (newDate) {
+                    tasks[index].date = newDate;
+                }
                 updateTaskList();
             }
         }
@@ -239,7 +302,7 @@
 
         function createPoof(e) {
             const poof = document.createElement('div');
-            poof.textContent = '💨';
+            poof.textContent = '🚀';
             poof.className = 'poof';
             poof.style.left = `${e.clientX}px`;
             poof.style.top = `${e.clientY}px`;
@@ -250,14 +313,43 @@
         function exportAsPNG() {
             html2canvas(document.body).then(canvas => {
                 const link = document.createElement('a');
-                link.download = 'task-list.png';
+                link.download = 'mars-rover-tasks.png';
                 link.href = canvas.toDataURL();
                 link.click();
             });
         }
 
+        function selectRandomTask() {
+            if (tasks.length === 0) {
+                alert("No tasks available. Add some tasks first!");
+                return;
+            }
+            const randomIndex = Math.floor(Math.random() * tasks.length);
+            const randomTask = tasks[randomIndex];
+            alert(`Random task selected: ${randomTask.name}`);
+            // Optionally, you could highlight this task in the UI
+        }
+
+        function orderTasks() {
+            tasks.sort((a, b) => {
+                if (a.date && b.date) return new Date(a.date) - new Date(b.date);
+                if (a.date) return -1;
+                if (b.date) return 1;
+                return 0;
+            });
+            updateTaskList();
+        }
+
         // Initialize with a sample task
-        tasks.push({ name: "Get started with Task Zapper!", subtasks: [], completed: false });
+        tasks.push({ 
+            name: "Initiate Mars surface exploration", 
+            date: "2024-07-20", 
+            subtasks: [
+                { name: "Deploy rover", completed: false, timeEstimate: 30 },
+                { name: "Calibrate sensors", completed: false, timeEstimate: 15 }
+            ], 
+            completed: false 
+        });
         updateTaskList();
     </script>
 </body>
