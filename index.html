@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Task Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        input, select, button {
+            margin: 10px 0;
+            padding: 8px;
+            width: 100%;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #taskList {
+            margin-top: 20px;
+        }
+        .task {
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .task button {
+            width: auto;
+            padding: 5px 10px;
+            margin-right: 5px;
+        }
+        #strategyResult {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e8f4f8;
+            border-radius: 5px;
+        }
+        .subtask {
+            margin-left: 20px;
+            list-style-type: none;
+        }
+        .subtask input[type="checkbox"] {
+            margin-right: 5px;
+        }
+        #randomTaskModal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Enhanced Task Management System</h1>
+    
+    <div id="addTaskSection">
+        <h2>Add New Task</h2>
+        <input type="text" id="taskName" placeholder="Task Name">
+        <input type="text" id="taskDescription" placeholder="Task Description">
+        <input type="datetime-local" id="taskDeadline" placeholder="Deadline">
+        <input type="datetime-local" id="taskAssigned" placeholder="Assigned Date/Time">
+        <select id="taskPriority">
+            <option value="Low">Low Priority</option>
+            <option value="Medium" selected>Medium Priority</option>
+            <option value="High">High Priority</option>
+        </select>
+        <input type="number" id="taskTime" placeholder="Estimated Time (minutes)">
+        <button onclick="addTask()">Add Task</button>
+    </div>
+
+    <div id="mentalStateSection">
+        <h2>Assess Mental State</h2>
+        <select id="mentalState">
+            <option value="Focused">Focused</option>
+            <option value="Overwhelmed">Overwhelmed</option>
+            <option value="Distracted">Distracted</option>
+            <option value="Procrastinating">Procrastinating</option>
+        </select>
+        <button onclick="assessState()">Update Mental State</button>
+    </div>
+
+    <div id="strategySection">
+        <h2>Apply Strategy</h2>
+        <button onclick="applyStrategy()">Select and Apply Strategy</button>
+        <button onclick="randomTask()">Random Task</button>
+        <button onclick="orderAssigned()">Order by Assigned Time</button>
+    </div>
+
+    <div id="strategyResult"></div>
+
+    <div id="taskList">
+        <h2>Task List</h2>
+        <!-- Tasks will be displayed here -->
+    </div>
+
+    <div id="randomTaskModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Random Task</h2>
+            <div id="randomTaskContent"></div>
+            <button onclick="doRandomTask()">Do It Now</button>
+            <button onclick="skipRandomTask()">Skip</button>
+        </div>
+    </div>
+
+    <script>
+        let tasks = [];
+        let mentalResources = { currentState: "Focused" };
+        let currentRandomTask = null;
+
+        function addTask() {
+            const name = document.getElementById('taskName').value;
+            const description = document.getElementById('taskDescription').value;
+            const deadline = document.getElementById('taskDeadline').value;
+            const assigned = document.getElementById('taskAssigned').value;
+            const priority = document.getElementById('taskPriority').value;
+            const estimatedTime = document.getElementById('taskTime').value;
+
+            if (name) {
+                tasks.push({ name, description, deadline, assigned, priority, estimatedTime, subtasks: [] });
+                updateTaskList();
+                clearInputs();
+            }
+        }
+
+        function clearInputs() {
+            document.getElementById('taskName').value = '';
+            document.getElementById('taskDescription').value = '';
+            document.getElementById('taskDeadline').value = '';
+            document.getElementById('taskAssigned').value = '';
+            document.getElementById('taskPriority').value = 'Medium';
+            document.getElementById('taskTime').value = '';
+        }
+
+        function updateTaskList() {
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '<h2>Task List</h2>';
+            tasks.forEach((task, index) => {
+                const taskElement = document.createElement('div');
+                taskElement.classList.add('task');
+                taskElement.innerHTML = `
+                    <h3>${task.name}</h3>
+                    <p>${task.description}</p>
+                    <p>Deadline: ${task.deadline || 'Not set'}</p>
+                    <p>Assigned: ${task.assigned || 'Not set'}</p>
+                    <p>Priority: ${task.priority}</p>
+                    <p>Estimated Time: ${task.estimatedTime} minutes</p>
+                    <button onclick="removeTask(${index})">Remove</button>
+                    <button onclick="editTask(${index})">Edit</button>
+                    <button onclick="addSubtask(${index})">Add Step</button>
+                    <ul class="subtasks">
+                        ${task.subtasks.map((subtask, subIndex) => `
+                            <li class="subtask">
+                                <input type="checkbox" ${subtask.completed ? 'checked' : ''} onchange="toggleSubtask(${index}, ${subIndex})">
+                                ${subtask.name}
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
+                taskList.appendChild(taskElement);
+            });
+        }
+
+        function removeTask(index) {
+            tasks.splice(index, 1);
+            updateTaskList();
+        }
+
+        function editTask(index) {
+            const task = tasks[index];
+            document.getElementById('taskName').value = task.name;
+            document.getElementById('taskDescription').value = task.description;
+            document.getElementById('taskDeadline').value = task.deadline;
+            document.getElementById('taskAssigned').value = task.assigned;
+            document.getElementById('taskPriority').value = task.priority;
+            document.getElementById('taskTime').value = task.estimatedTime;
+            removeTask(index);
+        }
+
+        function addSubtask(taskIndex) {
+            const subtaskName = prompt("Enter the step name:");
+            if (subtaskName) {
+                tasks[taskIndex].subtasks.push({ name: subtaskName, completed: false });
+                updateTaskList();
+            }
+        }
+
+        function toggleSubtask(taskIndex, subtaskIndex) {
+            tasks[taskIndex].subtasks[subtaskIndex].completed = !tasks[taskIndex].subtasks[subtaskIndex].completed;
+            updateTaskList();
+        }
+
+        function assessState() {
+            mentalResources.currentState = document.getElementById('mentalState').value;
+            document.getElementById('strategyResult').innerHTML = `Mental state updated to: ${mentalResources.currentState}`;
+        }
+
+        function applyStrategy() {
+            let strategy;
+            if (mentalResources.currentState === "Overwhelmed" || tasks.length > 10) {
+                strategy = "Kill Task";
+            } else if (mentalResources.currentState === "Procrastinating") {
+                strategy = "Order Due";
+            } else if (mentalResources.currentState === "Focused") {
+                strategy = "Name The Steps";
+            } else {
+                strategy = "Random Task";
+            }
+
+            let result = `Selected strategy: ${strategy}<br>`;
+
+            switch (strategy) {
+                case "Kill Task":
+                    result += killTask();
+                    break;
+                case "Order Due":
+                    result += orderDue();
+                    break;
+                case "Name The Steps":
+                    result += nameTheSteps();
+                    break;
+                case "Random Task":
+                    randomTask();
+                    return;
+            }
+
+            document.getElementById('strategyResult').innerHTML = result;
+        }
+
+        function killTask() {
+            if (tasks.length === 0) return "No tasks to remove.";
+            const index = Math.floor(Math.random() * tasks.length);
+            const removedTask = tasks.splice(index, 1)[0];
+            updateTaskList();
+            return `Removed task: ${removedTask.name}`;
+        }
+
+        function orderDue() {
+            tasks.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+            updateTaskList();
+            return "Tasks ordered by deadline.";
+        }
+
+        function orderAssigned() {
+            tasks.sort((a, b) => new Date(a.assigned) - new Date(b.assigned));
+            updateTaskList();
+            document.getElementById('strategyResult').innerHTML = "Tasks ordered by assigned date/time.";
+        }
+
+        function nameTheSteps() {
+            if (tasks.length === 0) return "No tasks available.";
+            const task = tasks[Math.floor(Math.random() * tasks.length)];
+            const steps = prompt(`Enter steps for "${task.name}" (separate by commas):`)
+            if (steps) {
+                steps.split(',').forEach(step => {
+                    task.subtasks.push({ name: step.trim(), completed: false });
+                });
+                updateTaskList();
+                return `Updated task "${task.name}" with new steps.`;
+            }
+            return "No steps added.";
+        }
+
+        function randomTask() {
+            if (tasks.length === 0) {
+                document.getElementById('strategyResult').innerHTML = "No tasks available.";
+                return;
+            }
+            currentRandomTask = tasks[Math.floor(Math.random() * tasks.length)];
+            document.getElementById('randomTaskContent').innerHTML = `
+                <h3>${currentRandomTask.name}</h3>
+                <p>${currentRandomTask.description}</p>
+                <p>Priority: ${currentRandomTask.priority}</p>
+                <p>Estimated Time: ${currentRandomTask.estimatedTime} minutes</p>
+            `;
+            document.getElementById('randomTaskModal').style.display = "block";
+        }
+
+        function doRandomTask() {
+            document.getElementById('randomTaskModal').style.display = "none";
+            document.getElementById('strategyResult').innerHTML = `Started working on task: ${currentRandomTask.name}`;
+        }
+
+        function skipRandomTask() {
+            randomTask();
+        }
+
+        // Close modal when clicking on X or outside the modal
+        document.querySelector('.close').onclick = function() {
+            document.getElementById('randomTaskModal').style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('randomTaskModal')) {
+                document.getElementById('randomTaskModal').style.display = "none";
+            }
+        }
+
+        // Initialize the task list
+        updateTaskList();
+    </script>
+</body>
+</html>
