@@ -3,228 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Task Management System</title>
+    <title>Task Zapper</title>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f39c12;
+            --background-color: #f4f4f4;
+            --text-color: #333;
+            --task-bg-color: #fff;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
-            color: #333;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 20px;
             max-width: 800px;
             margin: 0 auto;
-            padding: 20px;
-            background-color: #f4f4f4;
         }
-        h1, h2, h3 {
-            color: #2c3e50;
+
+        h1, h2 {
+            color: var(--primary-color);
         }
-        input, select, button {
-            margin: 10px 0;
-            padding: 8px;
-            width: 100%;
+
+        .task-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
         }
-        button {
-            background-color: #3498db;
+
+        .task-input input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 2px solid var(--primary-color);
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .task-input button {
+            background-color: var(--primary-color);
             color: white;
             border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.3s;
         }
-        button:hover {
-            background-color: #2980b9;
+
+        .task-input button:hover {
+            background-color: #3a7bd5;
         }
-        #taskList {
-            margin-top: 20px;
-        }
+
         .task {
-            background-color: white;
-            border: 1px solid #ddd;
-            padding: 10px;
+            background-color: var(--task-bg-color);
+            border-radius: 5px;
+            padding: 15px;
             margin-bottom: 10px;
-            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
         }
-        .task button {
-            width: auto;
+
+        .task:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .task h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .task-actions button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
             padding: 5px 10px;
-            margin-right: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.3s;
         }
-        #strategyResult {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #e8f4f8;
-            border-radius: 5px;
+
+        .task-actions button:hover {
+            background-color: #e67e22;
         }
+
         .subtask {
-            margin-left: 20px;
-            list-style-type: none;
+            display: flex;
+            align-items: center;
+            margin-top: 5px;
         }
+
         .subtask input[type="checkbox"] {
-            margin-right: 5px;
+            margin-right: 10px;
         }
-        #randomTaskModal {
-            display: none;
+
+        .completed {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+
+        .poof {
             position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
+            pointer-events: none;
+            font-size: 24px;
+            animation: poof 0.5s ease-out;
         }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 500px;
+
+        @keyframes poof {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
         }
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
+
+        #exportButton {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
             cursor: pointer;
+            margin-top: 20px;
         }
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .task-input {
+                flex-direction: column;
+            }
+
+            .task-actions {
+                flex-wrap: wrap;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Enhanced Task Management System</h1>
+    <h1>Task Zapper</h1>
     
-    <div id="addTaskSection">
-        <h2>Add New Task</h2>
-        <input type="text" id="taskName" placeholder="Task Name">
-        <input type="text" id="taskDescription" placeholder="Task Description">
-        <input type="datetime-local" id="taskDeadline" placeholder="Deadline">
-        <input type="datetime-local" id="taskAssigned" placeholder="Assigned Date/Time">
-        <select id="taskPriority">
-            <option value="Low">Low Priority</option>
-            <option value="Medium" selected>Medium Priority</option>
-            <option value="High">High Priority</option>
-        </select>
-        <input type="number" id="taskTime" placeholder="Estimated Time (minutes)">
-        <button onclick="addTask()">Add Task</button>
+    <div class="task-input">
+        <input type="text" id="taskName" placeholder="What needs to be done?">
+        <button onclick="addTask()">Zap It In</button>
     </div>
-
-    <div id="mentalStateSection">
-        <h2>Assess Mental State</h2>
-        <select id="mentalState">
-            <option value="Focused">Focused</option>
-            <option value="Overwhelmed">Overwhelmed</option>
-            <option value="Distracted">Distracted</option>
-            <option value="Procrastinating">Procrastinating</option>
-        </select>
-        <button onclick="assessState()">Update Mental State</button>
-    </div>
-
-    <div id="strategySection">
-        <h2>Apply Strategy</h2>
-        <button onclick="applyStrategy()">Select and Apply Strategy</button>
-        <button onclick="randomTask()">Random Task</button>
-        <button onclick="orderAssigned()">Order by Assigned Time</button>
-    </div>
-
-    <div id="strategyResult"></div>
 
     <div id="taskList">
-        <h2>Task List</h2>
         <!-- Tasks will be displayed here -->
     </div>
 
-    <div id="randomTaskModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Random Task</h2>
-            <div id="randomTaskContent"></div>
-            <button onclick="doRandomTask()">Do It Now</button>
-            <button onclick="skipRandomTask()">Skip</button>
-        </div>
-    </div>
+    <button id="exportButton" onclick="exportAsPNG()">Export as PNG</button>
 
     <script>
         let tasks = [];
-        let mentalResources = { currentState: "Focused" };
-        let currentRandomTask = null;
 
         function addTask() {
-            const name = document.getElementById('taskName').value;
-            const description = document.getElementById('taskDescription').value;
-            const deadline = document.getElementById('taskDeadline').value;
-            const assigned = document.getElementById('taskAssigned').value;
-            const priority = document.getElementById('taskPriority').value;
-            const estimatedTime = document.getElementById('taskTime').value;
-
-            if (name) {
-                tasks.push({ name, description, deadline, assigned, priority, estimatedTime, subtasks: [] });
+            const taskName = document.getElementById('taskName').value.trim();
+            if (taskName) {
+                tasks.push({ name: taskName, subtasks: [], completed: false });
+                document.getElementById('taskName').value = '';
                 updateTaskList();
-                clearInputs();
             }
-        }
-
-        function clearInputs() {
-            document.getElementById('taskName').value = '';
-            document.getElementById('taskDescription').value = '';
-            document.getElementById('taskDeadline').value = '';
-            document.getElementById('taskAssigned').value = '';
-            document.getElementById('taskPriority').value = 'Medium';
-            document.getElementById('taskTime').value = '';
         }
 
         function updateTaskList() {
             const taskList = document.getElementById('taskList');
-            taskList.innerHTML = '<h2>Task List</h2>';
+            taskList.innerHTML = '';
             tasks.forEach((task, index) => {
                 const taskElement = document.createElement('div');
                 taskElement.classList.add('task');
+                if (task.completed) taskElement.classList.add('completed');
                 taskElement.innerHTML = `
                     <h3>${task.name}</h3>
-                    <p>${task.description}</p>
-                    <p>Deadline: ${task.deadline || 'Not set'}</p>
-                    <p>Assigned: ${task.assigned || 'Not set'}</p>
-                    <p>Priority: ${task.priority}</p>
-                    <p>Estimated Time: ${task.estimatedTime} minutes</p>
-                    <button onclick="removeTask(${index})">Remove</button>
-                    <button onclick="editTask(${index})">Edit</button>
-                    <button onclick="addSubtask(${index})">Add Step</button>
-                    <ul class="subtasks">
+                    <div class="subtasks">
                         ${task.subtasks.map((subtask, subIndex) => `
-                            <li class="subtask">
+                            <div class="subtask">
                                 <input type="checkbox" ${subtask.completed ? 'checked' : ''} onchange="toggleSubtask(${index}, ${subIndex})">
-                                ${subtask.name}
-                            </li>
+                                <span class="${subtask.completed ? 'completed' : ''}">${subtask.name}</span>
+                            </div>
                         `).join('')}
-                    </ul>
+                    </div>
+                    <div class="task-actions">
+                        <button onclick="addSubtask(${index})">Add Step</button>
+                        <button onclick="editTask(${index})">Edit</button>
+                        <button onclick="removeTask(${index})">Remove</button>
+                        <button onclick="toggleTask(${index})">${task.completed ? 'Unmark' : 'Complete'}</button>
+                    </div>
                 `;
                 taskList.appendChild(taskElement);
             });
         }
 
-        function removeTask(index) {
-            tasks.splice(index, 1);
-            updateTaskList();
-        }
-
-        function editTask(index) {
-            const task = tasks[index];
-            document.getElementById('taskName').value = task.name;
-            document.getElementById('taskDescription').value = task.description;
-            document.getElementById('taskDeadline').value = task.deadline;
-            document.getElementById('taskAssigned').value = task.assigned;
-            document.getElementById('taskPriority').value = task.priority;
-            document.getElementById('taskTime').value = task.estimatedTime;
-            removeTask(index);
-        }
-
         function addSubtask(taskIndex) {
-            const subtaskName = prompt("Enter the step name:");
-            if (subtaskName) {
-                tasks[taskIndex].subtasks.push({ name: subtaskName, completed: false });
+            const subtaskName = prompt("Enter the step:");
+            if (subtaskName && subtaskName.trim()) {
+                tasks[taskIndex].subtasks.push({ name: subtaskName.trim(), completed: false });
                 updateTaskList();
             }
         }
@@ -234,113 +215,49 @@
             updateTaskList();
         }
 
-        function assessState() {
-            mentalResources.currentState = document.getElementById('mentalState').value;
-            document.getElementById('strategyResult').innerHTML = `Mental state updated to: ${mentalResources.currentState}`;
-        }
-
-        function applyStrategy() {
-            let strategy;
-            if (mentalResources.currentState === "Overwhelmed" || tasks.length > 10) {
-                strategy = "Kill Task";
-            } else if (mentalResources.currentState === "Procrastinating") {
-                strategy = "Order Due";
-            } else if (mentalResources.currentState === "Focused") {
-                strategy = "Name The Steps";
-            } else {
-                strategy = "Random Task";
-            }
-
-            let result = `Selected strategy: ${strategy}<br>`;
-
-            switch (strategy) {
-                case "Kill Task":
-                    result += killTask();
-                    break;
-                case "Order Due":
-                    result += orderDue();
-                    break;
-                case "Name The Steps":
-                    result += nameTheSteps();
-                    break;
-                case "Random Task":
-                    randomTask();
-                    return;
-            }
-
-            document.getElementById('strategyResult').innerHTML = result;
-        }
-
-        function killTask() {
-            if (tasks.length === 0) return "No tasks to remove.";
-            const index = Math.floor(Math.random() * tasks.length);
-            const removedTask = tasks.splice(index, 1)[0];
-            updateTaskList();
-            return `Removed task: ${removedTask.name}`;
-        }
-
-        function orderDue() {
-            tasks.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
-            updateTaskList();
-            return "Tasks ordered by deadline.";
-        }
-
-        function orderAssigned() {
-            tasks.sort((a, b) => new Date(a.assigned) - new Date(b.assigned));
-            updateTaskList();
-            document.getElementById('strategyResult').innerHTML = "Tasks ordered by assigned date/time.";
-        }
-
-        function nameTheSteps() {
-            if (tasks.length === 0) return "No tasks available.";
-            const task = tasks[Math.floor(Math.random() * tasks.length)];
-            const steps = prompt(`Enter steps for "${task.name}" (separate by commas):`)
-            if (steps) {
-                steps.split(',').forEach(step => {
-                    task.subtasks.push({ name: step.trim(), completed: false });
-                });
+        function editTask(index) {
+            const newName = prompt("Edit task:", tasks[index].name);
+            if (newName && newName.trim()) {
+                tasks[index].name = newName.trim();
                 updateTaskList();
-                return `Updated task "${task.name}" with new steps.`;
-            }
-            return "No steps added.";
-        }
-
-        function randomTask() {
-            if (tasks.length === 0) {
-                document.getElementById('strategyResult').innerHTML = "No tasks available.";
-                return;
-            }
-            currentRandomTask = tasks[Math.floor(Math.random() * tasks.length)];
-            document.getElementById('randomTaskContent').innerHTML = `
-                <h3>${currentRandomTask.name}</h3>
-                <p>${currentRandomTask.description}</p>
-                <p>Priority: ${currentRandomTask.priority}</p>
-                <p>Estimated Time: ${currentRandomTask.estimatedTime} minutes</p>
-            `;
-            document.getElementById('randomTaskModal').style.display = "block";
-        }
-
-        function doRandomTask() {
-            document.getElementById('randomTaskModal').style.display = "none";
-            document.getElementById('strategyResult').innerHTML = `Started working on task: ${currentRandomTask.name}`;
-        }
-
-        function skipRandomTask() {
-            randomTask();
-        }
-
-        // Close modal when clicking on X or outside the modal
-        document.querySelector('.close').onclick = function() {
-            document.getElementById('randomTaskModal').style.display = "none";
-        }
-
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('randomTaskModal')) {
-                document.getElementById('randomTaskModal').style.display = "none";
             }
         }
 
-        // Initialize the task list
+        function removeTask(index) {
+            createPoof(event);
+            tasks.splice(index, 1);
+            updateTaskList();
+        }
+
+        function toggleTask(index) {
+            tasks[index].completed = !tasks[index].completed;
+            if (tasks[index].completed) {
+                createPoof(event);
+            }
+            updateTaskList();
+        }
+
+        function createPoof(e) {
+            const poof = document.createElement('div');
+            poof.textContent = '💨';
+            poof.className = 'poof';
+            poof.style.left = `${e.clientX}px`;
+            poof.style.top = `${e.clientY}px`;
+            document.body.appendChild(poof);
+            setTimeout(() => poof.remove(), 500);
+        }
+
+        function exportAsPNG() {
+            html2canvas(document.body).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'task-list.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+        // Initialize with a sample task
+        tasks.push({ name: "Get started with Task Zapper!", subtasks: [], completed: false });
         updateTaskList();
     </script>
 </body>
