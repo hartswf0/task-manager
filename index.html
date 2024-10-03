@@ -1,9 +1,9 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Task Zapper: Mars Mission Critical</title>
+    <!-- Include Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Inconsolata&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -39,7 +39,7 @@
         }
 
         header h1 {
-            font-family: 'Inconsolata', monospace;
+            font-family: var(--font-mono);
             color: var(--primary-color);
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -320,6 +320,9 @@
             margin-top: auto;
             font-size: 0.8em;
             color: #666;
+            background-color: var(--task-bg-color);
+            padding: 10px;
+            text-align: center;
         }
 
         /* Accessibility: High Contrast Mode */
@@ -419,6 +422,13 @@
                 <option value="astronaut3">Astronaut 3</option>
             </select>
             <textarea id="taskDescription" placeholder="Task description (optional)" rows="3" aria-label="Task description"></textarea>
+            <!-- Advanced Options -->
+            <button onclick="toggleAdvancedOptions()">Advanced Options</button>
+            <div id="advancedOptions" style="display: none;">
+                <input type="text" id="taskEstimatedTime" placeholder="Estimated Time (e.g., 2 hours)" aria-label="Estimated Time">
+                <input type="text" id="taskDependencies" placeholder="Dependencies (Task IDs comma-separated)" aria-label="Dependencies">
+                <!-- Tooltips can be added via title attributes -->
+            </div>
             <button id="saveTaskButton" onclick="saveTask()">Add Task</button>
             <button onclick="closeModal()">Cancel</button>
         </div>
@@ -436,22 +446,67 @@
         </div>
     </div>
 
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeSettingsModal()" aria-label="Close">&times;</button>
+            <h2 id="settingsTitle">Settings</h2>
+            <label>
+                Theme:
+                <select id="themeSelector" onchange="changeTheme()">
+                    <option value="default">Dark</option>
+                    <option value="light">Light</option>
+                </select>
+            </label>
+            <br>
+            <label>
+                Column Layout:
+                <select id="columnLayout" onchange="changeLayout()">
+                    <option value="3">3 Columns</option>
+                    <option value="1">1 Column</option>
+                </select>
+            </label>
+            <button onclick="closeSettingsModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- Feedback Modal -->
+    <div id="feedbackModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeFeedbackModal()" aria-label="Close">&times;</button>
+            <h2 id="feedbackTitle">Feedback</h2>
+            <textarea id="feedbackText" rows="5" placeholder="Describe the issue or share your thoughts" aria-label="Feedback"></textarea>
+            <button onclick="submitFeedback()">Submit</button>
+            <button onclick="closeFeedbackModal()">Cancel</button>
+        </div>
+    </div>
+
     <footer>
+        <button onclick="openSettingsModal()">Settings</button>
+        <button onclick="openFeedbackModal()">Feedback</button>
         <p>&copy; Mars Mission Control - Task Zapper</p>
     </footer>
 
     <script>
-        let tasks = [];
+        let tasks = JSON.parse(localStorage.getItem('marsMissionTasks')) || [];
         let draggedTask = null;
         let editingTaskId = null;
+        let deletedTasks = [];
+        let draftTask = JSON.parse(localStorage.getItem('draftTask')) || {};
+
+        // Load draft task if exists
+        if (draftTask.name) {
+            document.getElementById('taskName').value = draftTask.name;
+        }
 
         // Accessibility: Keyboard navigation for modals
         document.addEventListener('keydown', function(event) {
-            const isModalOpen = document.getElementById('taskModal').style.display === 'block' ||
-                                document.getElementById('importExportModal').style.display === 'block';
+            const isModalOpen = [...document.querySelectorAll('.modal')].some(modal => modal.style.display === 'block');
             if (isModalOpen && event.key === 'Escape') {
                 closeModal();
                 closeImportExportModal();
+                closeSettingsModal();
+                closeFeedbackModal();
             }
         });
 
@@ -479,6 +534,18 @@
             document.getElementById('taskPriority').value = 'low';
             document.getElementById('taskAssignee').value = 'unassigned';
             document.getElementById('taskDescription').value = '';
+            document.getElementById('taskEstimatedTime').value = '';
+            document.getElementById('taskDependencies').value = '';
+            document.getElementById('advancedOptions').style.display = 'none';
+        }
+
+        function toggleAdvancedOptions() {
+            const advancedOptions = document.getElementById('advancedOptions');
+            if (advancedOptions.style.display === 'none') {
+                advancedOptions.style.display = 'block';
+            } else {
+                advancedOptions.style.display = 'none';
+            }
         }
 
         function saveTask() {
@@ -487,6 +554,8 @@
             const taskPriority = document.getElementById('taskPriority').value;
             const taskAssignee = document.getElementById('taskAssignee').value;
             const taskDescription = document.getElementById('taskDescription').value.trim();
+            const taskEstimatedTime = document.getElementById('taskEstimatedTime').value.trim();
+            const taskDependencies = document.getElementById('taskDependencies').value.trim();
 
             if (taskName) {
                 if (editingTaskId) {
@@ -496,15 +565,19 @@
                     task.priority = taskPriority;
                     task.assignee = taskAssignee;
                     task.description = taskDescription;
+                    task.estimatedTime = taskEstimatedTime;
+                    task.dependencies = taskDependencies;
                     editingTaskId = null;
                 } else {
-                    const newTask = { 
+                    const newTask = {
                         id: Date.now(),
-                        name: taskName, 
-                        date: taskDate, 
+                        name: taskName,
+                        date: taskDate,
                         priority: taskPriority,
                         assignee: taskAssignee,
                         description: taskDescription,
+                        estimatedTime: taskEstimatedTime,
+                        dependencies: taskDependencies,
                         status: 'todo',
                         subtasks: [],
                         completed: false
@@ -514,6 +587,7 @@
                 updateTaskBoard();
                 closeModal();
                 clearModalFields();
+                localStorage.removeItem('draftTask');
             }
         }
 
@@ -541,6 +615,8 @@
                 ${task.description ? `<p>${task.description}</p>` : ''}
                 <p>Date: ${task.date || 'Not set'}</p>
                 <p>Assignee: ${task.assignee}</p>
+                ${task.estimatedTime ? `<p>Estimated Time: ${task.estimatedTime}</p>` : ''}
+                ${task.dependencies ? `<p>Dependencies: ${task.dependencies}</p>` : ''}
                 <div class="subtasks">
                     ${task.subtasks.map((subtask, index) => `
                         <div class="subtask">
@@ -618,13 +694,30 @@
                 document.getElementById('taskPriority').value = task.priority;
                 document.getElementById('taskAssignee').value = task.assignee;
                 document.getElementById('taskDescription').value = task.description || '';
+                document.getElementById('taskEstimatedTime').value = task.estimatedTime || '';
+                document.getElementById('taskDependencies').value = task.dependencies || '';
                 openModal(true);
+                toggleAdvancedOptions();
             }
         }
 
         function deleteTask(taskId) {
-            tasks = tasks.filter(task => task.id !== taskId);
-            updateTaskBoard();
+            const taskIndex = tasks.findIndex(task => task.id === taskId);
+            if (taskIndex > -1) {
+                deletedTasks.push(tasks[taskIndex]);
+                tasks.splice(taskIndex, 1);
+                showMessage('Task deleted. <button onclick="undoDelete()">Undo</button>');
+                updateTaskBoard();
+            }
+        }
+
+        function undoDelete() {
+            if (deletedTasks.length > 0) {
+                const restoredTask = deletedTasks.pop();
+                tasks.push(restoredTask);
+                showMessage('Task restored.');
+                updateTaskBoard();
+            }
         }
 
         function toggleTask(taskId) {
@@ -712,9 +805,88 @@
             }
         }
 
+        // Settings Modal Functions
+        function openSettingsModal() {
+            document.getElementById('settingsModal').style.display = 'block';
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function changeTheme() {
+            const theme = document.getElementById('themeSelector').value;
+            if (theme === 'light') {
+                document.body.classList.add('light-theme');
+            } else {
+                document.body.classList.remove('light-theme');
+            }
+        }
+
+        function changeLayout() {
+            const layout = document.getElementById('columnLayout').value;
+            const taskBoard = document.querySelector('.task-board');
+            if (layout === '1') {
+                taskBoard.style.flexDirection = 'column';
+            } else {
+                taskBoard.style.flexDirection = 'row';
+            }
+        }
+
+        // Feedback Modal Functions
+        function openFeedbackModal() {
+            document.getElementById('feedbackModal').style.display = 'block';
+        }
+
+        function closeFeedbackModal() {
+            document.getElementById('feedbackModal').style.display = 'none';
+            document.getElementById('feedbackText').value = '';
+        }
+
+        function submitFeedback() {
+            const feedback = document.getElementById('feedbackText').value.trim();
+            if (feedback) {
+                // Simulate sending feedback to the server
+                console.log('Feedback submitted:', feedback);
+                alert('Thank you for your feedback!');
+                closeFeedbackModal();
+            }
+        }
+
+        // Offline Functionality
+        window.addEventListener('offline', function() {
+            alert('You are offline. Changes will sync when back online.');
+        });
+
+        window.addEventListener('online', function() {
+            alert('You are back online. Syncing data...');
+            // Implement data sync if needed
+        });
+
         // Initialize
-        loadTasksFromLocalStorage();
+        updateTaskBoard();
         updateBatteryStatus();
+
+        // Save Draft Functionality
+        document.getElementById('taskName').addEventListener('input', saveDraft);
+        function saveDraft() {
+            const taskName = document.getElementById('taskName').value.trim();
+            draftTask.name = taskName;
+            localStorage.setItem('draftTask', JSON.stringify(draftTask));
+        }
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', function(event) {
+            if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
+                if (event.key === 'n' || event.key === 'N') {
+                    openModal();
+                } else if (event.key === 'e' || event.key === 'E') {
+                    // Implement edit functionality if needed
+                } else if (event.key === 'd' || event.key === 'D') {
+                    // Implement delete functionality if needed
+                }
+            }
+        });
     </script>
 </body>
 </html>
